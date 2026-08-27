@@ -1,0 +1,22 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Node (in case a skill ships scripts/tooling)
+node_modules/
+npm-debug.log*
+
+# Python (in case a skill ships scripts/tooling)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Logs / scratch
+*.log
+.tmp/

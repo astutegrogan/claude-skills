@@ -1,0 +1,9 @@
+{
+  "name": "gauntlet-loop",
+  "description": "Matt Shumer's builder/critic sub-agent pattern, ported to Claude Code's Workflow tool and hardened against real usage — decompose a goal into independently-gradable pieces, each with a dedicated builder + fresh-context blind critic, looped until pass or a bounded attempt cap.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Delegated Trust"
+  },
+  "license": "All rights reserved"
+}

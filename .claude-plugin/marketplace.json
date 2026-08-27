@@ -1,0 +1,19 @@
+{
+  "name": "claude-skills",
+  "owner": {
+    "name": "Delegated Trust",
+    "url": "https://github.com/astutegrogan/claude-skills"
+  },
+  "description": "Claude Code skills built by Delegated Trust.",
+  "plugins": [
+    {
+      "name": "gauntlet-loop",
+      "source": "./plugins/gauntlet-loop",
+      "description": "Matt Shumer's builder/critic sub-agent pattern, ported to Claude Code's Workflow tool and hardened against real usage.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Delegated Trust"
+      }
+    }
+  ]
+}
