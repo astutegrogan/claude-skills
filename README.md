@@ -9,6 +9,7 @@ Claude Code skills built by [Delegated Trust](https://github.com/astutegrogan) �
 ## Skills
 
 - **[gauntlet-loop](./plugins/gauntlet-loop/)** — Matt Shumer's builder/critic sub-agent pattern, ported to Claude Code's `Workflow` tool and hardened against real usage. Requires the `Workflow` tool.
+- **[round-table](./plugins/round-table/)** — bounded, turn-based multi-specialist deliberation for judgment calls where distinct perspectives might genuinely disagree, reverse-engineered from Cursor's Grok Bot group-meeting orchestrator. Requires the `Workflow` tool.
 
 ## Install
 
@@ -17,6 +18,7 @@ In Claude Code:
 ```
 /plugin marketplace add astutegrogan/claude-skills
 /plugin install gauntlet-loop@claude-skills
+/plugin install round-table@claude-skills
 ```
 
 That's it — no git, no terminal commands outside Claude Code itself. The skill becomes available as `/gauntlet-loop:gauntlet-loop`, or just ask for what it does in plain language and Claude Code will invoke it. See each skill's own `README.md` for prerequisites.

@@ -42,7 +42,7 @@ Full research, attribution chain, and case-study evidence: see the skill file's 
 
 ## Attribution
 
-Pattern named and popularized by Matt Shumer ([@mattshumer_](https://x.com/mattshumer_)), HyperWrite/OthersideAI, August 2026 ("Claude of Duty" — a AAA-quality FPS built end-to-end via a fleet of builder/critic sub-agent pairs in Claude Code). This implementation and its hardening rules are not official Shumer material — they're a working port of the pattern onto Claude Code's `Workflow` tool, refined against real usage.
+Pattern named and popularized by Matt Shumer ([@mattshumer_](https://x.com/mattshumer_)), HyperWrite/OthersideAI, August 2026 ("Claude of Duty" — an AAA-quality FPS built end-to-end via a fleet of builder/critic sub-agent pairs in Claude Code). This implementation and its hardening rules are not official Shumer material — they're a working port of the pattern onto Claude Code's `Workflow` tool, refined against real usage.
 
 ## Rights
 

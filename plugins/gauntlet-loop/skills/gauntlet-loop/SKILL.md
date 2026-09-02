@@ -13,7 +13,7 @@ Run a `Workflow` script shaped like this, not a bundled spec→build→verify pa
 
 Not everything is. A single, well-scoped fix with an obvious verification step (already-diagnosed bug, one function, clear fix) is a direct build-and-verify pass, not a loop. Reach for the full pattern when there are genuinely multiple independently-gradable pieces, or when a single piece is subtle/sensitive enough that a blind second opinion is worth the round-trip.
 
-Before launching, **state the worst-case spawn count to the user**: roughly `N_pieces × MAX_ATTEMPTS × 2 + N_waves (commit agents) + 2 (judge + integrate)`. This can add up fast — a real run with 8 pieces and a `MAX_ATTEMPTS` of 3 hit 50+ agent spawns. Know the number before committing to it, not after.
+Before launching, **state the worst-case spawn count to the user**: roughly `N_pieces × MAX_ATTEMPTS × 2 + N_waves (commit agents) + 1 (judge)`. This can add up fast — a real run with 8 pieces and a `MAX_ATTEMPTS` of 3 hit 50+ agent spawns. Know the number before committing to it, not after.
 
 **Model:** every `agent()` call in the script should pass `opts.model` explicitly (e.g. `'sonnet'`, or `'haiku'` for trivial checks). `Workflow`'s `agent()` inherits the session model when `model` is omitted — on a higher-tier session that means every builder and critic silently runs at that tier's rates. This applies to builders, critics, wave-commit agents, and the judge alike.
 
@@ -69,14 +69,15 @@ These two agent types have no reusable code template (every piece's builder/crit
 
 **Wave-commit agent**, run once per wave after all that wave's `buildPart` calls resolve:
 - Pass each piece's full result object (including `lastFailures`/`lastSummary`) into the prompt and instruct: *"use these verbatim, do not summarize them away."*
-- `git add -A && git commit` **everything from the wave in one commit**, regardless of pass/fail (rule 3) — never `git checkout --` to discard a failed piece.
+- **Before committing, run `git status --porcelain` and check it against the wave's declared file ownership (rule 1).** This run's own pieces should only ever touch their declared files — anything else showing up untracked/modified belongs to the stranger's repo this is running in (secrets, unrelated WIP), not to this run. Since rule 1 requires every piece's owned files to be known up front, stage and commit **only the files each piece is known to have created/modified** (`git add <owned files>`, not `git add -A`) — never sweep up untracked/modified files outside every piece's declared ownership. If for some reason ownership can't be reliably determined for what `git status --porcelain` shows, do not guess: abort the wave-commit and surface a clear message that the tree had unexplained changes and nothing was auto-committed.
+- Commit **everything from the wave's owned files in one commit**, regardless of pass/fail (rule 3) — never `git checkout --` to discard a failed piece.
 - If any piece failed: update the punchlist (seeded before the loop started — see "Before running") with the verbatim failure detail, not a summary.
 - Explicit instruction: **do NOT push to a shared/remote branch** — that decision belongs to the user, every time, regardless of how clean the run looked.
 
 **Judge agent**, run once at the very end, independent of every per-piece critic:
 - Re-verify the full diff against the pre-loop baseline tag (rule 9) with fresh live testing — not by reading the critics' self-reports.
 - Specifically hunt for: a piece a critic passed that isn't actually better than baseline, and a defect shared by old and new code that no piece's clauses happened to check for.
-- Recommend promote-or-revert per piece, with reasoning grounded in what the judge itself observed.
+- Recommend promote-or-revert per piece, with reasoning grounded in what the judge itself observed. **This is a recommendation only** — the judge never reverts anything itself; any revert requires explicit user approval (consistent with rule 3's "never discarded" — see below).
 
 ## Non-negotiable rules
 
@@ -100,11 +101,13 @@ These two agent types have no reusable code template (every piece's builder/crit
 
 8. **Builders never commit mid-loop.** A separate, centralized agent commits once per wave, after all that wave's build/critique loops resolve (respecting rules 3 and 7).
 
-9. **A final judge agent, independent of the per-piece critics, re-verifies the diff against a preserved pre-loop baseline** (`git tag` the state before starting) before recommending promote-or-revert per piece. This catches things per-piece loops structurally can't — e.g. a critic-approved piece that isn't actually better than baseline, or a defect shared by both the old and new code that no piece's clauses happened to check.
+9. **A final judge agent, independent of the per-piece critics, re-verifies the diff against a preserved pre-loop baseline** (`git tag` the state before starting) before recommending promote-or-revert per piece. This catches things per-piece loops structurally can't — e.g. a critic-approved piece that isn't actually better than baseline, or a defect shared by both the old and new code that no piece's clauses happened to check. **This does not contradict rule 3's "never discarded":** the judge only *recommends* promote-or-revert — it never executes a revert itself, and neither does the loop. Any actual revert requires explicit user approval.
 
 ## Before running
 
+- **Verify a git repo and a dedicated working branch before any tagging or committing happens.** Confirm cwd is inside a git repo (e.g. `git rev-parse --is-inside-work-tree`), and confirm there's a dedicated working branch for this run. If it's not a git repo, or the current branch is a shared/default branch the user hasn't explicitly confirmed for this run, stop and ask — don't proceed into tagging or wave commits.
 - Confirm with the user whether this qualifies as their environment's opt-in for multi-agent orchestration (some Claude Code setups require explicit confirmation before launching many agents) — state the worst-case spawn count as part of that check-in.
+- **Before launching, tell the user explicitly what committing will look like**, something like: *"This run will create up to N commits on your current branch, including any failed pieces (committed with an 'incomplete' flag, never reverted)."* Compute N from the spawn-count formula above (roughly `N_waves` commits, one per wave, each possibly containing incomplete pieces). This is the "never revert, commit incomplete pieces flagged incomplete" policy (rule 3) — say it up front, don't just leave it documented in this file.
 - Tag the pre-loop state (`git tag <descriptive-name>`) so the final judge has a real baseline to compare against.
 - **Create a punchlist file before writing the first `agent()` call, seeded with every piece as pending** — as an actual `Write` step early in the script, not a prose reminder to do it "later." A workflow that crashes mid-run before any commit agent runs is exactly the scenario this guards against, and the file has to exist before that risk window opens. Where to put it is up to the user's own conventions (a durable notes/reviews location if they have one, or a plain file in the project) — ask if unclear.
 
