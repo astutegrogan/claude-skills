@@ -10,7 +10,7 @@
       "name": "gauntlet-loop",
       "source": "./plugins/gauntlet-loop",
       "description": "Matt Shumer's builder/critic sub-agent pattern, ported to Claude Code's Workflow tool and hardened against real usage.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "Delegated Trust"
       }
@@ -19,7 +19,7 @@
       "name": "round-table",
       "source": "./plugins/round-table",
       "description": "Bounded, turn-based multi-specialist deliberation for judgment calls where distinct perspectives might genuinely disagree, ported to Claude Code's Workflow tool and hardened against real usage.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "Delegated Trust"
       }

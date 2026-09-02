@@ -1,7 +1,7 @@
 {
   "name": "round-table",
   "description": "Bounded, turn-based multi-specialist deliberation for judgment calls where distinct perspectives might genuinely disagree — reverse-engineered from Cursor's Grok Bot group-meeting orchestrator, hardened against real usage on Claude Code's Workflow tool.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": {
     "name": "Delegated Trust"
   },
