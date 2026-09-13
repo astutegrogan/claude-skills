@@ -1,0 +1,9 @@
+{
+  "name": "mutation-audit",
+  "description": "Audit whether a test suite would actually catch a plausible bug, by applying one small mechanical mutation at a time in an isolated worktree and checking whether the tests fail. Ported and stripped from a Codex skill, hardened for Claude Code's Workflow tool.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Delegated Trust"
+  },
+  "license": "All rights reserved"
+}

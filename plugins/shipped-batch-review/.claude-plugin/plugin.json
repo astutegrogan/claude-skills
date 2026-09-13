@@ -1,0 +1,9 @@
+{
+  "name": "shipped-batch-review",
+  "description": "Independently re-review a batch of already-shipped/merged commits as one cumulative unit, fresh-context, trusting no prior self-report or per-commit review. Closes the gap between per-commit review and whole-batch review.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Delegated Trust"
+  },
+  "license": "All rights reserved"
+}

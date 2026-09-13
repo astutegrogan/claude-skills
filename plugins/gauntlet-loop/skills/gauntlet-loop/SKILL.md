@@ -47,7 +47,11 @@ function trackSpawn(ceiling) {
 
 const BUILD_SCHEMA = {
   type: 'object',
-  properties: { diffHash: {type:'string'}, summary: {type:'string'} },
+  properties: {
+    diffHash: {type:'string'}, summary: {type:'string'},
+    // rule 15, optional: only present when part.canaryChecks is declared for this piece
+    canaryResults: {type:'array', items: {type:'object', properties:{id:{type:'string'}, pass:{type:'boolean'}, output:{type:'string'}}, required:['id','pass']}},
+  },
   required: ['diffHash', 'summary'],
 }
 
@@ -90,6 +94,23 @@ async function buildPart(part, waveTitle, spawnCeiling) {
       break
     }
     lastDiffHash = diffHash
+
+    // OPTIONAL CANARY GATE (rule 15): only runs when part.canaryChecks is declared. Reject before
+    // spending a critic turn if a check that was GREEN on the pre-loop baseline is now failing —
+    // this is a real regression on protected behavior, not something a critic needs to discover.
+    // A check that was already failing on the baseline (part.canaryKnownFailures) never blocks here;
+    // it's tracked so it's never silently reported as passing either.
+    if (part.canaryChecks?.length) {
+      const newRegressions = (buildResult.canaryResults || [])
+        .filter(r => !r.pass && !part.canaryKnownFailures?.includes(r.id))
+      if (newRegressions.length) {
+        wastedAttempts += 0 // a canary reject is a genuine attempt with real feedback, not a wasted/no-progress one
+        feedback = `Canary check(s) failed on protected behavior — rejected before spending a critic turn:\n- ` +
+          newRegressions.map(r => `${r.id}: ${r.output || 'failed'}`).join('\n- ')
+        log(`${part.id} attempt ${attempt}/${MAX_ATTEMPTS}: CANARY REJECT — ${newRegressions.map(r => r.id).join(', ')}`)
+        continue
+      }
+    }
 
     trackSpawn(spawnCeiling)
     const verdict = await agent(criticPrompt(part), {label: `critic:${part.id}`, phase: waveTitle, schema: VERDICT_SCHEMA, model: 'sonnet'})
@@ -201,7 +222,9 @@ Deletion under this failure mode is categorically unrecoverable via git — this
 
 14. **Never hardcode a second, mirrored copy of `MAX_ATTEMPTS` (or any other config value) into a generated prompt or schema.** Same lesson round-table already learned the hard way with `TURN_SCHEMA.messages.maxItems` (fixed 2026-08-26, after an earlier version hand-typed `maxItems: 2` as a second copy of `maxPerMemberPerRound` that could silently drift out of sync): if a builder/critic prompt or a verdict schema needs to state the attempt count, wave count, or spawn ceiling, build that string/value from the single `MAX_ATTEMPTS`/`N_PIECES`/`N_WAVES` constants at the top of the script — `` `attempt ${attempt}/${MAX_ATTEMPTS}` ``, not a prompt template with `3` typed in literally. The `SPAWN_CEILING` block in "Required shape" is the canonical worked example of this rule applied to the spawn ceiling itself — see the comment there.
 
-15. **For any run with more than a couple of pieces, or any run that could plausibly need to survive a restart, write a manifest to disk before the build loop starts, and checkpoint per piece as results land.** (External review, 2026-09-10, RCA'd finding: gauntlet-loop's `Workflow` script cannot itself be a durable unattended supervisor — no state persists across a crash, and there's no OS-level process control to resume one — but it *can* cheaply checkpoint to disk, which is worth doing on its own merits even for a run the user is watching live.)
+15. **Optional: gate a piece with a small, immutable canary check BEFORE spending a critic turn, when the piece touches behavior that must not regress.** (Ported and stripped from a Codex `regression-canary` skill, 2026-09-13 — most of that skill's ~600 words were filesystem-identity/allocation-registry bookkeeping that compensates for Codex having no equivalent to `agent({isolation:'worktree'})` or schema-validated retries; none of that transfers, only the core idea does.) Not every piece needs this — use it when the piece's own spec calls out a specific protected behavior (an existing smoke test, a critical path, a known-fragile area) that a full critic pass might not think to check first. Declare `part.canaryChecks` (a small list of exact, deterministic commands with expected results) and, if applicable, `part.canaryKnownFailures` (check IDs already failing on the pre-loop baseline — run the checks once against the baseline before the loop starts to populate this, see "Before running") **before the piece's first attempt** — never add, remove, or loosen a canary check after seeing a result; that's moving the goalposts mid-run. The builder runs its own declared canary checks itself (in the same turn as computing its diff hash, since it already has Bash access there) and reports pass/fail per check in `BUILD_SCHEMA`'s `canaryResults`. A check that newly fails (and wasn't already known-broken on the baseline) rejects the attempt immediately, with the exact check output as feedback — **before the critic is ever spawned**, saving that turn for a regression a canary can already prove. A check that was already failing pre-loop never blocks (you can't gate a piece on a baseline that was already red), but never report it as passing either — track it distinctly, the same way this skill already tracks a wasted vs. a genuine failed attempt. This is a narrow, early rejection gate, not a substitute for the critic's own broader verification — a clean canary pass still goes to the critic as normal.
+
+16. **For any run with more than a couple of pieces, or any run that could plausibly need to survive a restart, write a manifest to disk before the build loop starts, and checkpoint per piece as results land.** (External review, 2026-09-10, RCA'd finding: gauntlet-loop's `Workflow` script cannot itself be a durable unattended supervisor — no state persists across a crash, and there's no OS-level process control to resume one — but it *can* cheaply checkpoint to disk, which is worth doing on its own merits even for a run the user is watching live.)
     - **Before the build loop starts**, `Write` a manifest object alongside the punchlist file (see "Before running") — a machine-readable sibling of it, not a replacement: pieces, `baseRef`, spawn ceiling, `MAX_ATTEMPTS`, and which landing mode this run is using (worktree-default / shared-checkout fallback / serial shared-checkout, per the "Landing modes at a glance" table) — a human or future system reading this on resume needs to know which commit mechanics and which branch apply, same reason everything else here is recorded.
     - **After each piece's `buildPart` call resolves** (pass or fail), write/update that piece's checkpoint entry to disk — could be the same manifest file, updated in place — recording pass/fail, attempts used, `wastedAttempts`. This is what lets a caller tell, after an interruption, which pieces are already done without re-running them.
     - **This checkpoint has no automatic resume-from-checkpoint logic in gauntlet-loop's own script** — building that would require the OS-level supervisor this skill explicitly doesn't attempt to be (see rule 12). The manifest is written for a human or a future automated system to read on manual resume, not for gauntlet-loop to consume itself mid-run.
@@ -214,7 +237,8 @@ Deletion under this failure mode is categorically unrecoverable via git — this
 - Tag the pre-loop state (`git tag <descriptive-name>`) so the final judge has a real baseline to compare against.
 - **If this run is using the shared-checkout fallback or serial shared-checkout mode (see the "Landing modes at a glance" table), create and checkout a dedicated review branch from that same pre-loop baseline tag BEFORE the build loop starts** — e.g. `git checkout -b review/<descriptive-name> <baseline-tag>` — and do this before the first builder/critic `agent()` call, not as something wave-commit fixes up afterward. Under these two modes the critic commits inline with no separate piece branch and no wave-commit merge step to redirect commits after the fact: whatever branch HEAD is on when the critic runs `git commit` is where that commit lands, permanently. This is exactly the mechanism behind a real incident where a live run was invoked while sitting on the default branch and the critic's inline commits landed directly there. Worktree-default mode doesn't need this step — its review branch is populated by the wave-commit agent's merge/cherry-pick, not by inline commits landing wherever HEAD happens to be.
 - **Create a punchlist file before writing the first `agent()` call, seeded with every piece as pending** — as an actual `Write` step early in the script, not a prose reminder to do it "later." A workflow that crashes mid-run before any commit agent runs is exactly the scenario this guards against, and the file has to exist before that risk window opens. Where to put it is up to the user's own conventions (a durable notes/reviews location if they have one, or a plain file in the project) — ask if unclear.
-- **Also write the rule 15 manifest to disk before the build loop starts** — pieces, `baseRef`, spawn ceiling, `MAX_ATTEMPTS`, and this run's landing mode — alongside the punchlist file, as its own `Write` step (see rule 15).
+- **Also write the rule 16 manifest to disk before the build loop starts** — pieces, `baseRef`, spawn ceiling, `MAX_ATTEMPTS`, and this run's landing mode — alongside the punchlist file, as its own `Write` step (see rule 16).
+- **If any piece declares `canaryChecks` (rule 15), run those checks once against the pre-loop baseline before the build loop starts** and record which ones are already failing as `part.canaryKnownFailures` — a canary can only meaningfully gate a *new* regression, and you can't tell a new failure from a pre-existing one without this baseline read.
 - Worktree-isolated pieces (rule 10's default) were shaken down live 2026-09-10 in a real single-piece canary run — see rule 10's "Worktree allocation granularity" note for the verified findings. If running against a genuinely new repo/context (different filesystem, different git remote setup, a monorepo with submodules, etc.), a fresh single-piece canary is still cheap insurance — the mechanism is verified, not every possible environment.
 
 ## After running

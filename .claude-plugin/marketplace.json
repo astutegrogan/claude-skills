@@ -10,7 +10,7 @@
       "name": "gauntlet-loop",
       "source": "./plugins/gauntlet-loop",
       "description": "Matt Shumer's builder/critic sub-agent pattern, ported to Claude Code's Workflow tool and hardened against real usage.",
-      "version": "1.0.2",
+      "version": "1.1.0",
       "author": {
         "name": "Delegated Trust"
       }
@@ -20,6 +20,24 @@
       "source": "./plugins/round-table",
       "description": "Bounded, turn-based multi-specialist deliberation for judgment calls where distinct perspectives might genuinely disagree, ported to Claude Code's Workflow tool and hardened against real usage.",
       "version": "1.0.1",
+      "author": {
+        "name": "Delegated Trust"
+      }
+    },
+    {
+      "name": "mutation-audit",
+      "source": "./plugins/mutation-audit",
+      "description": "Audit whether a test suite would actually catch a plausible bug, by applying one small mechanical mutation at a time in an isolated worktree and checking whether the tests fail. Ported and stripped from a Codex skill, hardened for Claude Code's Workflow tool.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Delegated Trust"
+      }
+    },
+    {
+      "name": "shipped-batch-review",
+      "source": "./plugins/shipped-batch-review",
+      "description": "Independently re-review a batch of already-shipped/merged commits as one cumulative unit, fresh-context, trusting no prior self-report or per-commit review.",
+      "version": "1.0.0",
       "author": {
         "name": "Delegated Trust"
       }
