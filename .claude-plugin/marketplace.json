@@ -34,8 +34,8 @@
       }
     },
     {
-      "name": "shipped-batch-review",
-      "source": "./plugins/shipped-batch-review",
+      "name": "batch-review",
+      "source": "./plugins/batch-review",
       "description": "Independently re-review a batch of already-shipped/merged commits as one cumulative unit, fresh-context, trusting no prior self-report or per-commit review.",
       "version": "1.0.0",
       "author": {

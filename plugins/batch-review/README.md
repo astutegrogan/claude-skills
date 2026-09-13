@@ -1,4 +1,4 @@
-# Shipped-Batch Review
+# Batch Review
 
 A Claude Code skill for a specific gap that per-commit review leaves open: several commits, each individually reviewed and fine on its own, that land over a session or a day without anyone ever reviewing the *cumulative* result as one unit — and without independently checking any commit that was self-verified with no critic at all.
 
@@ -6,7 +6,7 @@ Written 2026-09-13 the same day the gap it fixes was discovered: five real commi
 
 ## What's here
 
-A Claude Code plugin (`.claude-plugin/plugin.json`) wrapping one skill (`skills/shipped-batch-review/SKILL.md`), distributed via this repo's marketplace.
+A Claude Code plugin (`.claude-plugin/plugin.json`) wrapping one skill (`skills/batch-review/SKILL.md`), distributed via this repo's marketplace.
 
 ## Install
 
@@ -14,7 +14,7 @@ In Claude Code:
 
 ```
 /plugin marketplace add astutegrogan/claude-skills
-/plugin install shipped-batch-review@claude-skills
+/plugin install batch-review@claude-skills
 ```
 
 ## Use it when

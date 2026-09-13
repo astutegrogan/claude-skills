@@ -1,9 +1,9 @@
 ---
-name: shipped-batch-review
+name: batch-review
 description: Independently re-review a batch of already-shipped/merged commits as one cumulative unit, fresh-context, trusting no prior self-report or per-commit review. Use after a day (or session) of individually-reviewed commits landed without ever being checked together, or after any change that had no independent critic at the time. Not for reviewing in-flight/uncommitted work — use gauntlet-loop's judge step for that, before anything merges.
 ---
 
-# Shipped-Batch Review
+# Batch Review
 
 Gauntlet-loop's judge reviews a *loop's own pieces* against *that loop's own baseline*, before landing. This skill exists for the gap that leaves: several commits, each individually fine, that landed over a session or a day without anyone ever reviewing the *cumulative* result as one unit — and without anyone independently checking a piece that was self-verified with no critic at all (a "just this once, it's small" commit). Found and fixed 2026-09-13, the same day it happened: five real commits shipped, each piece-reviewed separately, but the last one (a lint cleanup) was self-verified by the same agent that wrote it, and nobody had looked at all five together.
 
@@ -44,7 +44,7 @@ Repo: ${repoPath}. Range to review: ${baselineRef}..${headRef} (${commitList.joi
 4. Identify which commits (if any) show no evidence of an independent fresh-context review at the time -- self-verified-only commits are the highest-risk items in the batch.
 5. Do at least one integration-level check beyond the unit-test suite for the highest-risk change in this range -- a real (scratch/disposable copy, never the live system) exercise of the actual behavior, not just a mocked test.
 6. Verdict PROMOTE only if the suite is green, no interaction findings, and every commit had real independent review at some point (including now, for any that didn't before). Otherwise FINDINGS, itemized with evidence.`,
-  { label: 'shipped-batch-review', phase: 'Shipped batch review', schema: REVIEW_SCHEMA, model: 'sonnet' }
+  { label: 'batch-review', phase: 'Batch review', schema: REVIEW_SCHEMA, model: 'sonnet' }
 )
 ```
 

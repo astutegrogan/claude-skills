@@ -25,4 +25,4 @@ In Claude Code:
 
 You doubt a test suite's power to catch regressions — after a fix touched a subtle boundary, before trusting an existing suite as a real release gate, or when a piece passed a builder/critic loop suspiciously easily. Not a routine step; a targeted audit.
 
-See the sibling [`gauntlet-loop`](../gauntlet-loop) skill for the builder+critic pattern this complements, and [`shipped-batch-review`](../shipped-batch-review) for independently reviewing a batch of already-shipped commits.
+See the sibling [`gauntlet-loop`](../gauntlet-loop) skill for the builder+critic pattern this complements, and [`batch-review`](../batch-review) for independently reviewing a batch of already-shipped commits.
